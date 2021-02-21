@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 3.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 1.13"
+    }
   }
   backend "s3" {
     bucket = "ies-asean-terraform-state-bucket"
@@ -49,20 +53,20 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
   load_config_file       = false
-  version                = "~> 1.9"
 }
 
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
-  cluster_name    = "my-cluster"
-  cluster_version = "1.17"
+  cluster_name    = "wl-cluster"
+  cluster_version = "1.19"
   subnets         = module.vpc.public_subnets
   vpc_id          = module.vpc.vpc_id
 
   worker_groups = [
     {
-      instance_type = "m4.large"
-      asg_max_size  = 1
+      instance_type    = "m4.large"
+      root_volume_type = "gp2"
+      asg_max_size     = 1
     }
   ]
 
