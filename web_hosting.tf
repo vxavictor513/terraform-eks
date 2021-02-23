@@ -1,8 +1,3 @@
-data "aws_route53_zone" "selected" {
-  name         = var.route53_zone
-  private_zone = false
-}
-
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = var.domain
@@ -22,54 +17,7 @@ data "aws_iam_user" "devops_user" {
 resource "aws_s3_bucket" "bucket" {
   bucket = var.domain
   acl    = "public-read"
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "PublicReadGetObject",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": [
-                "s3:GetObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::${var.domain}/*"
-            ]
-        },
-        {
-            "Sid": "DevOpsUserGetBucket",
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${data.aws_iam_user.devops_user.arn}"
-            },
-            "Action": [
-                "s3:GetBucketLocation",
-                "s3:ListBucket"
-            ],
-            "Resource": [
-                "arn:aws:s3:::${var.domain}"
-            ]
-        },
-        {
-            "Sid": "DevOpsUserGetPutObject",
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${data.aws_iam_user.devops_user.arn}"
-            },
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:PutObjectAcl",
-                "s3:DeleteObject"
-            ],
-            "Resource": [
-                "arn:aws:s3:::${var.domain}/*"
-            ]
-        }
-    ]
-}
-EOF
+  policy = data.aws_iam_policy_document.bucket_policy.json
 
   website {
     index_document = "index.html"
@@ -85,6 +33,51 @@ EOF
   }
 
   tags = local.common_tags
+}
+
+data "aws_iam_policy_document" "bucket_policy" {
+  statement {
+    sid    = "PublicReadGetObject"
+    effect = "Allow"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = [
+      "s3:GetObject"
+    ]
+    resources = ["arn:aws:s3:::${var.domain}/*"]
+  }
+
+  statement {
+    sid    = "DevOpsUserGetBucket"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [data.aws_iam_user.devops_user.arn]
+    }
+    actions = [
+      "s3:GetBucketLocation",
+      "s3:ListBucket"
+    ]
+    resources = ["arn:aws:s3:::${var.domain}"]
+  }
+
+  statement {
+    sid    = "DevOpsUserGetPutObject"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [data.aws_iam_user.devops_user.arn]
+    }
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:PutObjectAcl",
+      "s3:DeleteObject"
+    ]
+    resources = ["arn:aws:s3:::${var.domain}/*"]
+  }
 }
 
 resource "aws_cloudfront_distribution" "cdn" {
