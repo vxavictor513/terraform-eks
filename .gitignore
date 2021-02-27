@@ -32,3 +32,8 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+kubeconfig_wl-cluster
+external-dns.yaml
+nginx-tls-termination.yaml
+resourceserver-ingress.yaml

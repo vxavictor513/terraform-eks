@@ -1,3 +1,4 @@
+variable "eks_cluster_name" {}
 variable "map_users" {
   description = "Additional IAM users to add to the aws-auth configmap."
   type = list(object({
@@ -8,7 +9,7 @@ variable "map_users" {
 
   default = []
 }
-
 variable "route53_zone" {}
 variable "domain" {}
+variable "api_domain" {}
 variable "devops_user_name" {}
